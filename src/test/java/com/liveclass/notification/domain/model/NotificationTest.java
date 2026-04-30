@@ -1,5 +1,6 @@
 package com.liveclass.notification.domain.model;
 
+import com.liveclass.notification.domain.exception.InvalidStatusTransitionException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -79,7 +80,7 @@ class NotificationTest {
             Notification notification = createNotification();
 
             assertThatThrownBy(notification::markSent)
-                    .isInstanceOf(IllegalStateException.class);
+                    .isInstanceOf(InvalidStatusTransitionException.class);
         }
 
         @Test
@@ -89,7 +90,7 @@ class NotificationTest {
             notification.markQueued();
 
             assertThatThrownBy(notification::markQueued)
-                    .isInstanceOf(IllegalStateException.class);
+                    .isInstanceOf(InvalidStatusTransitionException.class);
         }
     }
 
@@ -136,12 +137,21 @@ class NotificationTest {
         }
 
         @Test
+        @DisplayName("PENDING 상태에서 실패 처리 가능 (큐 삽입 실패)")
+        void shouldAllowMarkFailedFromPending() {
+            Notification notification = createNotification();
+            notification.markFailed("queue unavailable");
+
+            assertThat(notification.getRetryInfo().getCount()).isEqualTo(1);
+        }
+
+        @Test
         @DisplayName("FAILED가 아닌 상태에서 수동 재시도 시 예외")
         void shouldThrowWhenManualRetryFromNonFailed() {
             Notification notification = createNotification();
 
             assertThatThrownBy(notification::retryManually)
-                    .isInstanceOf(IllegalStateException.class);
+                    .isInstanceOf(InvalidStatusTransitionException.class);
         }
     }
 

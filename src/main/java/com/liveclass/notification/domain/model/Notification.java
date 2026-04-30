@@ -1,5 +1,7 @@
 package com.liveclass.notification.domain.model;
 
+import com.liveclass.notification.domain.exception.InvalidStatusTransitionException;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -28,6 +30,7 @@ public class Notification {
             LocalDateTime scheduledAt
     ) {
         Notification notification = new Notification();
+        notification.id = UUID.randomUUID();
         notification.userId = userId;
         notification.eventId = eventId;
         notification.type = type;
@@ -43,7 +46,7 @@ public class Notification {
 
     public void markQueued() {
         if (this.sendStatus != SendStatus.PENDING) {
-            throw new IllegalStateException("PENDING 상태에서만 QUEUED로 전이 가능");
+            throw new InvalidStatusTransitionException(this.sendStatus, SendStatus.QUEUED);
         }
         this.sendStatus = SendStatus.QUEUED;
         this.updatedAt = LocalDateTime.now();
@@ -51,13 +54,16 @@ public class Notification {
 
     public void markSent() {
         if (this.sendStatus != SendStatus.QUEUED) {
-            throw new IllegalStateException("QUEUED 상태에서만 SENT로 전이 가능");
+            throw new InvalidStatusTransitionException(this.sendStatus, SendStatus.SENT);
         }
         this.sendStatus = SendStatus.SENT;
         this.updatedAt = LocalDateTime.now();
     }
 
     public void markFailed(String reason) {
+        if (this.sendStatus != SendStatus.QUEUED && this.sendStatus != SendStatus.PENDING) {
+            throw new InvalidStatusTransitionException(this.sendStatus, SendStatus.FAILED);
+        }
         this.retryInfo = retryInfo.recordFailure(reason);
         if (!retryInfo.canRetry()) {
             this.sendStatus = SendStatus.FAILED;
@@ -75,7 +81,7 @@ public class Notification {
 
     public void retryManually() {
         if (this.sendStatus != SendStatus.FAILED) {
-            throw new IllegalStateException("FAILED 상태에서만 수동 재시도 가능");
+            throw new InvalidStatusTransitionException(this.sendStatus, SendStatus.PENDING);
         }
         this.retryInfo = retryInfo.reset();
         this.sendStatus = SendStatus.PENDING;
@@ -100,6 +106,4 @@ public class Notification {
     public LocalDateTime getReadAt() { return readAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
-
-    public void setId(UUID id) { this.id = id; }
 }
