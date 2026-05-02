@@ -3,7 +3,6 @@ import json
 import logging
 import os
 
-import httpx
 import redis.asyncio as aioredis
 
 from senders import email_sender, in_app_sender
@@ -53,15 +52,13 @@ async def process(worker_name: str, payload_json: str, r: aioredis.Redis, api: I
         return
 
     try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                f"{WEB_BASE_URL}/internal/notifications/{notification_id}/claim",
-                timeout=5.0,
-            )
-        if resp.status_code == 409:
-            log.warning("[%s] Claim failed (already processing): notification_id=%s", worker_name, notification_id)
-            return
-        resp.raise_for_status()
+        try:
+            await api.claim(notification_id)
+        except Exception as e:
+            if hasattr(e, 'status') and e.status == 409:
+                log.warning("[%s] Claim failed (already processing): notification_id=%s", worker_name, notification_id)
+                return
+            raise
 
         attempt = 0
         while True:

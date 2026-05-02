@@ -7,11 +7,18 @@ generate-client:
 	openapi-generator generate \
 		-i docs/openapi.json \
 		-g python \
-		-o generated/notification_client \
+		-o generated/notification_client_async \
 		--package-name notification_client \
 		--library asyncio
-	cp -r generated/notification_client/notification_client worker/notification_client
-	cp -r generated/notification_client/notification_client relay/notification_client
+	openapi-generator generate \
+		-i docs/openapi.json \
+		-g python \
+		-o generated/notification_client_sync \
+		--package-name notification_client \
+		--library urllib3
+	rm -rf worker/notification_client relay/notification_client
+	cp -r generated/notification_client_async/notification_client worker/notification_client
+	cp -r generated/notification_client_sync/notification_client relay/notification_client
 
 up:
 	docker compose up --build
