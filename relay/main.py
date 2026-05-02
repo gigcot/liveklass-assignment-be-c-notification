@@ -6,7 +6,11 @@ import random
 
 import mysql.connector
 import redis
-import httpx
+
+from notification_client.api_client import ApiClient
+from notification_client.configuration import Configuration
+from notification_client.api.internal_notification_controller_api import InternalNotificationControllerApi
+from notification_client.models.failed_callback_request import FailedCallbackRequest
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
@@ -22,6 +26,8 @@ WEB_BASE_URL = os.getenv("WEB_BASE_URL", "http://localhost:8080")
 QUEUE_KEY = "notification:outbox:queue"
 BATCH_SIZE = 100
 POLL_INTERVAL = 1.0
+STALE_THRESHOLD_MINUTES = 5
+STALE_CHECK_INTERVAL = 60  # seconds
 
 LPUSH_MAX_RETRIES = 3
 LPUSH_BASE_DELAY = 1.0  # seconds
@@ -61,11 +67,41 @@ def lpush_with_retry(r: redis.Redis, payload_json: str) -> bool:
     return False
 
 
-def relay_once(db_conn, r: redis.Redis):
+FETCH_STALE_QUERY = """
+    SELECT BIN_TO_UUID(id) AS id
+    FROM user_notification
+    WHERE send_status IN ('PENDING', 'QUEUED', 'SENDING')
+      AND updated_at < DATE_SUB(NOW(), INTERVAL %s MINUTE)
+    LIMIT 100
+"""
+
+
+def recover_stale(db_conn, api: InternalNotificationControllerApi):
+    """일정 시간 이상 처리 중 상태에 머문 알림을 FAILED로 전환한다."""
+    cursor = db_conn.cursor(dictionary=True)
+    try:
+        cursor.execute(FETCH_STALE_QUERY, (STALE_THRESHOLD_MINUTES,))
+        rows = cursor.fetchall()
+        for row in rows:
+            notification_id = row["id"]
+            try:
+                api.mark_failed(notification_id, FailedCallbackRequest(reason="STALE_TIMEOUT"))
+                log.info("Recovered stale notification=%s", notification_id)
+            except Exception:
+                log.exception("Failed to recover notification=%s", notification_id)
+    finally:
+        cursor.close()
+
+
+def relay_once(db_conn, r: redis.Redis, api: InternalNotificationControllerApi):
     cursor = db_conn.cursor(dictionary=True)
     try:
         cursor.execute(FETCH_PENDING_QUERY, (BATCH_SIZE,))
         rows = cursor.fetchall()
+
+        if not rows:
+            db_conn.commit()
+            return
 
         for row in rows:
             outbox_id_bytes = row["id"]
@@ -81,10 +117,7 @@ def relay_once(db_conn, r: redis.Redis):
 
             db_conn.commit()
 
-            httpx.post(
-                f"{WEB_BASE_URL}/internal/notifications/{notification_id}/queued",
-                timeout=5.0,
-            )
+            api.mark_queued(notification_id)
             log.info("Relayed: notification_id=%s", notification_id)
 
     except Exception:
@@ -96,13 +129,26 @@ def relay_once(db_conn, r: redis.Redis):
 
 def main():
     r = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
+    config = Configuration(host=WEB_BASE_URL)
+    api_client = ApiClient(config)
+    api = InternalNotificationControllerApi(api_client)
 
     while True:
         try:
             with mysql.connector.connect(**DB_CONFIG) as db_conn:
-                log.info("Connected to DB. Starting relay loop...")
+                log.info("Connected to DB. Running startup stale recovery...")
+                recover_stale(db_conn, api)
+
+                log.info("Starting relay loop...")
+                last_stale_check = time.monotonic()
                 while True:
-                    relay_once(db_conn, r)
+                    relay_once(db_conn, r, api)
+
+                    now = time.monotonic()
+                    if now - last_stale_check >= STALE_CHECK_INTERVAL:
+                        recover_stale(db_conn, api)
+                        last_stale_check = now
+
                     time.sleep(POLL_INTERVAL)
         except Exception:
             log.exception("Connection error. Retrying in 5s...")
