@@ -1,6 +1,9 @@
 HELP.md
 .gradle
 build/
+generated/
+worker/notification_client/
+relay/notification_client/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
@@ -35,3 +38,8 @@ out/
 
 ### VS Code ###
 .vscode/
+.env
+
+### Generated ###
+docs/openapi.json
+openapitools.json
