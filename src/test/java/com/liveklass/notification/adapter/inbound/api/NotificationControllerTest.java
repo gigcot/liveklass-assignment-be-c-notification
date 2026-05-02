@@ -5,9 +5,10 @@ import com.liveklass.notification.adapter.inbound.api.dto.RegisterNotificationRe
 import com.liveklass.notification.application.port.inbound.GetNotificationUseCase;
 import com.liveklass.notification.application.port.inbound.MarkReadUseCase;
 import com.liveklass.notification.application.port.inbound.RegisterNotificationUseCase;
+import com.liveklass.notification.application.port.inbound.RetryNotificationUseCase;
 import com.liveklass.notification.domain.exception.DuplicateNotificationException;
 import com.liveklass.notification.domain.exception.NotificationNotFoundException;
-import com.liveclass.notification.domain.model.*;
+import com.liveklass.notification.domain.model.*;
 import com.liveklass.notification.domain.model.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,9 @@ class NotificationControllerTest {
 
     @MockitoBean
     private MarkReadUseCase markReadUseCase;
+
+    @MockitoBean
+    private RetryNotificationUseCase retryNotificationUseCase;
 
     @Test
     void 알림_접수_요청_성공() throws Exception {
@@ -135,6 +139,32 @@ class NotificationControllerTest {
         doThrow(new NotificationNotFoundException(id)).when(markReadUseCase).markRead(id);
 
         mockMvc.perform(patch("/api/notifications/" + id + "/read"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void 최종실패_목록_조회_성공() throws Exception {
+        given(retryNotificationUseCase.findFailed()).willReturn(List.of());
+
+        mockMvc.perform(get("/api/notifications/failed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void 수동_재시도_성공() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        mockMvc.perform(post("/api/notifications/" + id + "/retry"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void 수동_재시도_없는_알림_404() throws Exception {
+        UUID id = UUID.randomUUID();
+        doThrow(new NotificationNotFoundException(id)).when(retryNotificationUseCase).retryManually(id);
+
+        mockMvc.perform(post("/api/notifications/" + id + "/retry"))
                 .andExpect(status().isNotFound());
     }
 

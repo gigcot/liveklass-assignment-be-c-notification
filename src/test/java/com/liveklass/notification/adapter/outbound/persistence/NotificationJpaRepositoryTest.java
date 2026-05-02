@@ -1,6 +1,6 @@
 package com.liveklass.notification.adapter.outbound.persistence;
 
-import com.liveclass.notification.domain.model.*;
+import com.liveklass.notification.domain.model.*;
 
 import com.liveklass.notification.domain.model.*;
 import org.junit.jupiter.api.Test;

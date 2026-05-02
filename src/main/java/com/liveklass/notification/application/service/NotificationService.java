@@ -3,7 +3,7 @@ package com.liveklass.notification.application.service;
 import com.liveklass.notification.domain.exception.DuplicateNotificationException;
 import com.liveklass.notification.domain.exception.NotificationNotFoundException;
 import com.liveklass.notification.domain.exception.TemplateNotFoundException;
-import com.liveclass.notification.domain.model.*;
+import com.liveklass.notification.domain.model.*;
 import com.liveklass.notification.application.port.inbound.GetNotificationUseCase;
 import com.liveklass.notification.application.port.inbound.MarkReadUseCase;
 import com.liveklass.notification.application.port.inbound.RegisterNotificationUseCase;

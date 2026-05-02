@@ -1,7 +1,8 @@
 package com.liveklass.notification.adapter.outbound.persistence;
 
-import com.liveklass.notification.domain.model.UserNotification;
 import com.liveklass.notification.application.port.outbound.NotificationRepository;
+import com.liveklass.notification.domain.model.SendStatus;
+import com.liveklass.notification.domain.model.UserNotification;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -53,6 +54,13 @@ public class NotificationRepositoryAdapter implements NotificationRepository {
     @Override
     public List<UserNotification> findByUserIdAndReadAtIsNotNull(UUID userId) {
         return jpaRepository.findByUserIdAndReadAtIsNotNull(userId).stream()
+                .map(NotificationJpaEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<UserNotification> findBySendStatus(SendStatus status) {
+        return jpaRepository.findBySendStatus(status).stream()
                 .map(NotificationJpaEntity::toDomain)
                 .toList();
     }

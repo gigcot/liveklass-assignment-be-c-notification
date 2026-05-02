@@ -1,6 +1,6 @@
 package com.liveklass.notification.adapter.outbound.persistence;
 
-import com.liveclass.notification.domain.model.*;
+import com.liveklass.notification.domain.model.*;
 import com.liveklass.notification.domain.model.Channel;
 import com.liveklass.notification.domain.model.OutboxEvent;
 import com.liveklass.notification.domain.model.OutboxPayload;

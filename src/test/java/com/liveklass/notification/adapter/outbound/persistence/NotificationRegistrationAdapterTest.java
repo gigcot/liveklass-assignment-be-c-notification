@@ -1,7 +1,7 @@
 package com.liveklass.notification.adapter.outbound.persistence;
 
 import com.liveklass.notification.application.port.outbound.NotificationRegistrationPort;
-import com.liveclass.notification.domain.model.*;
+import com.liveklass.notification.domain.model.*;
 import com.liveklass.notification.domain.model.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
