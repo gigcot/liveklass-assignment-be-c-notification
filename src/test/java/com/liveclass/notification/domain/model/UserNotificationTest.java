@@ -25,6 +25,7 @@ class UserNotificationTest {
                 TEMPLATE_ID,
                 Channel.IN_APP,
                 new ReferenceData(Map.of("courseName", "Spring Boot")),
+                null, null,
                 null
         );
     }
@@ -49,7 +50,7 @@ class UserNotificationTest {
             LocalDateTime scheduled = LocalDateTime.now().plusDays(1);
             UserNotification notification = UserNotification.create(
                     USER_ID, EVENT_ID, TEMPLATE_ID, Channel.IN_APP,
-                    new ReferenceData(Map.of()), scheduled
+                    new ReferenceData(Map.of()), null, null, scheduled
             );
 
             assertThat(notification.getScheduledAt()).isEqualTo(scheduled);
@@ -205,7 +206,7 @@ class UserNotificationTest {
         void shouldBeReadyWhenScheduledTimeHasPassed() {
             UserNotification notification = UserNotification.create(
                     USER_ID, EVENT_ID, TEMPLATE_ID, Channel.IN_APP,
-                    new ReferenceData(Map.of()),
+                    new ReferenceData(Map.of()), null, null,
                     LocalDateTime.now().minusMinutes(1)
             );
 
@@ -217,7 +218,7 @@ class UserNotificationTest {
         void shouldNotBeReadyWhenScheduledTimeNotReached() {
             UserNotification notification = UserNotification.create(
                     USER_ID, EVENT_ID, TEMPLATE_ID, Channel.IN_APP,
-                    new ReferenceData(Map.of()),
+                    new ReferenceData(Map.of()), null, null,
                     LocalDateTime.now().plusDays(1)
             );
 

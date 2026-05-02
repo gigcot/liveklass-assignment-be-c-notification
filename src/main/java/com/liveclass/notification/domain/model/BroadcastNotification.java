@@ -55,7 +55,7 @@ public class BroadcastNotification {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void markFailed(String reason) {
+    public void markFailed(FailureReason reason) {
         if (this.sendStatus != SendStatus.QUEUED && this.sendStatus != SendStatus.PENDING) {
             throw new InvalidStatusTransitionException(this.sendStatus, SendStatus.FAILED);
         }

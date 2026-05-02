@@ -20,8 +20,8 @@ public class RetryInfo {
         return count < MAX_RETRY_COUNT;
     }
 
-    public RetryInfo recordFailure(String reason) {
-        return new RetryInfo(count + 1, reason);
+    public RetryInfo recordFailure(FailureReason reason) {
+        return new RetryInfo(count + 1, reason.name());
     }
 
     public RetryInfo reset() {

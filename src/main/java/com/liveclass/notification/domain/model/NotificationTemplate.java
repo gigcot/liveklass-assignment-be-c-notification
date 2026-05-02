@@ -46,6 +46,22 @@ public class NotificationTemplate {
         return result;
     }
 
+    public static NotificationTemplate reconstruct(
+            UUID id, NotificationType type, Channel channel,
+            String title, String body,
+            LocalDateTime createdAt, LocalDateTime updatedAt
+    ) {
+        NotificationTemplate template = new NotificationTemplate();
+        template.id = id;
+        template.type = type;
+        template.channel = channel;
+        template.title = title;
+        template.body = body;
+        template.createdAt = createdAt;
+        template.updatedAt = updatedAt;
+        return template;
+    }
+
     public void update(String title, String body) {
         this.title = title;
         this.body = body;
