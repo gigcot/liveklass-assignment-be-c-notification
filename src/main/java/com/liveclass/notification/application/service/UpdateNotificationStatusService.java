@@ -18,8 +18,10 @@ public class UpdateNotificationStatusService implements UpdateNotificationStatus
     }
 
     @Override
+    @Transactional
     public void markQueued(UUID id) {
-        UserNotification notification = findOrThrow(id);
+        UserNotification notification = notificationRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new NotificationNotFoundException(id));
         notification.markQueued();
         notificationRepository.save(notification);
     }
