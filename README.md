@@ -411,7 +411,7 @@ Location: /api/notifications/3fa85f64-5717-4562-b3fc-2c963f66afa6
 
 **Channel**: `EMAIL`, `IN_APP`
 
-**FailureReason**: `SEND_FAILED`, `TIMEOUT`, `CHANNEL_UNAVAILABLE`
+**FailureReason**: `SEND_FAILED`, `TIMEOUT`, `CHANNEL_UNAVAILABLE`, `STALE_TIMEOUT`
 
 ## 테스트 실행 방법
 
